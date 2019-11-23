@@ -8,6 +8,7 @@ import (
 	"os"
 )
 
+// 文件上传的接口
 func UploadHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method == "GET" {
 		// 返回上传的html页面
@@ -44,6 +45,7 @@ func UploadHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// 文件上传成功的接口
 func UploadSucHandler(w http.ResponseWriter, r *http.Request) {
 	io.WriteString(w, "Upload success, hahaha")
 }
