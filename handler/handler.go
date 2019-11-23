@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"encoding/json"
 	"filestore-server/meta"
 	"filestore-server/util"
 	"fmt"
@@ -54,11 +55,50 @@ func UploadHandler(w http.ResponseWriter, r *http.Request) {
 		fileMeta.FileSha1 = util.FileSha1(newFile)
 		meta.UpdateFileMeta(fileMeta)
 
-		http.Redirect(w, r, "/file/suc/", http.StatusFound)
+		io.WriteString(w, "Upload success, "+fileMeta.FileName+"\nsha1:"+fileMeta.FileSha1)
+
+		//http.Redirect(w, r, "/file/suc/", http.StatusFound)
 	}
 }
 
 // 文件上传成功的接口
 func UploadSucHandler(w http.ResponseWriter, r *http.Request) {
 	io.WriteString(w, "Upload success, hahaha")
+}
+
+// 获取文件元信息
+func GetFileMetaHandler(w http.ResponseWriter, r *http.Request) {
+	r.ParseForm()
+
+	filehash := r.Form["filehash"][0]
+	fMate := meta.GetFileMeta(filehash)
+	data, err := json.Marshal(fMate)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	w.Write(data)
+}
+
+func DownloadHandler(w http.ResponseWriter, r *http.Request) {
+	r.ParseForm()
+	fsha1 := r.Form.Get("filehash")
+	fm := meta.GetFileMeta(fsha1)
+
+	f, err := os.Open(fm.Location)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	defer f.Close()
+
+	data, err := ioutil.ReadAll(f)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/octect-stream")
+	w.Header().Set("Content-Description", "attachment;filename=\""+fm.FileSha1+"\"")
+	w.Write(data)
 }
