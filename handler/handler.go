@@ -40,10 +40,10 @@ func UploadHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		http.Redirect(w, r, "/file/upload/suc", http.StatusFound)
+		http.Redirect(w, r, "/file/suc/", http.StatusFound)
 	}
 }
 
 func UploadSucHandler(w http.ResponseWriter, r *http.Request) {
-	io.WriteString(w, "Upload success")
+	io.WriteString(w, "Upload success, hahaha")
 }
