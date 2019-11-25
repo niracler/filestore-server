@@ -11,6 +11,7 @@ type FileMeta struct {
 
 var fileMetas map[string]FileMeta
 
+// 文件元信息初始化
 func init() {
 	fileMetas = make(map[string]FileMeta)
 }
@@ -21,6 +22,11 @@ func UpdateFileMeta(fmeta FileMeta) {
 }
 
 // 通过sha1获取文件元信息
-func GetFileMeta(fileSh1 string) FileMeta {
-	return fileMetas[fileSh1]
+func GetFileMeta(fileSha1 string) FileMeta {
+	return fileMetas[fileSha1]
+}
+
+// 通过sha1删除文件
+func RemoveFileMeta(fileSha1 string) {
+
 }

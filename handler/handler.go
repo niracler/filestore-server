@@ -136,3 +136,19 @@ func FileMetaUpdateHandler(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 	w.Write(data)
 }
+
+// 文件删除的接口
+func DeleteHandler(w http.ResponseWriter, r *http.Request) {
+
+	r.ParseForm()
+	fileSha1 := r.Form.Get("filehash")
+
+	fMeta := meta.GetFileMeta(fileSha1)
+	os.Remove(fMeta.Location)
+
+	meta.RemoveFileMeta(fileSha1)
+
+	w.WriteHeader(http.StatusOK)
+
+	io.WriteString(w, "Delete success, hahaha")
+}
