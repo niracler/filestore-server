@@ -1,4 +1,4 @@
-package mysql
+package mydb
 
 import (
 	"database/sql"
