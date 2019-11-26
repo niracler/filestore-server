@@ -11,11 +11,12 @@ type FileMeta struct {
 	UploadAt string
 }
 
-// 新增、更新文件元信息到 mysql 中
+// 新增文件元信息到 mysql 中
 func CreateFileMetaDB(fmeta FileMeta) bool {
 	return db.OnFileUploadFinish(fmeta.FileSha1, fmeta.FileName, fmeta.FileSize, fmeta.Location)
 }
 
+// 更新文件元信息到 mysql 中
 func UpdateFileMetaDB(fmeta FileMeta) bool {
 	return db.OnFileUpdateFinish(fmeta.FileSha1, fmeta.FileName)
 }

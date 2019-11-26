@@ -76,6 +76,7 @@ func getMetaHandler(w http.ResponseWriter, r *http.Request) {
 	fMate, err := meta.GetFileMetaDB(filehash)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
+		fmt.Println("Failed get file meta , err : " + err.Error())
 		return
 	}
 
@@ -84,7 +85,7 @@ func getMetaHandler(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
-	w.Write(data)
+	util.Logerr(w.Write(data))
 }
 
 // 文件删除的接口
@@ -143,5 +144,5 @@ func updateMetaHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusOK)
-	w.Write(data)
+	util.Logerr(w.Write(data))
 }

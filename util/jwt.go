@@ -10,7 +10,7 @@ type jwtCustomClaims struct {
 
 	// 追加自己需要的信息
 	Uid      uint   `json:"uid"`
-	Username string `json:"Username"`
+	Username string `json:"username"`
 }
 
 /**
