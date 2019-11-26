@@ -17,7 +17,7 @@ const (
 func UserHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	if r.Method == http.MethodGet {
-		getInfoHandler(w, r) //查询用户信息
+		HTTPInterception(getInfoHandler)(w, r) //查询用户信息
 	} else if r.Method == http.MethodPost {
 		registerHandler(w, r) // 用户注册
 	} else {
