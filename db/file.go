@@ -34,6 +34,33 @@ func OnFileUploadFinish(filehash string, filename string, filesize int64, filead
 	return false
 }
 
+// 用于更新文件元信息的数据库操作封装类
+func OnFileUpdateFinish(filehash string, filename string) bool {
+	stmt, err := mydb.DBConn().Prepare(
+		"UPDATE fileserver_file SET file_name=? WHERE file_sha1=?",
+	)
+	if err != nil {
+		fmt.Println("Failed to prepare statement" + err.Error())
+		return false
+	}
+	defer stmt.Close()
+
+	ret, err := stmt.Exec(filename, filehash)
+	if err != nil {
+		fmt.Println(err.Error())
+		return false
+	}
+
+	if rf, err := ret.RowsAffected(); nil == err {
+		if rf <= 0 {
+			fmt.Printf("File with hash:%s has been uploaded before\n", filehash)
+		}
+
+		return true
+	}
+	return false
+}
+
 type TableFile struct {
 	FileHash string
 	FileName sql.NullString
