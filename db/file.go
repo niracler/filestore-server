@@ -6,8 +6,16 @@ import (
 	"fmt"
 )
 
+type TableFile struct {
+	FileHash string
+	FileName sql.NullString
+	FileSize sql.NullInt64
+	FileAddr sql.NullString
+	FileCre  string
+}
+
 // 用于更新文件元信息的数据库操作封装类
-func OnFileUploadFinish(filehash string, filename string, filesize int64, fileaddr string) bool {
+func CreateFileDB(filehash string, filename string, filesize int64, fileaddr string) bool {
 	stmt, err := mydb.DBConn().Prepare(
 		"INSERT IGNORE INTO fileserver_file (`file_sha1`, `file_name`, `file_size`, " +
 			" `file_addr`,  `status` ) VALUES(?,?,?,?,1)",
@@ -35,7 +43,7 @@ func OnFileUploadFinish(filehash string, filename string, filesize int64, filead
 }
 
 // 用于更新文件元信息的数据库操作封装类
-func OnFileUpdateFinish(filehash string, filename string) bool {
+func UpdateFileDB(filehash string, filename string) bool {
 	stmt, err := mydb.DBConn().Prepare(
 		"UPDATE fileserver_file SET file_name=? WHERE file_sha1=?",
 	)
@@ -61,16 +69,8 @@ func OnFileUpdateFinish(filehash string, filename string) bool {
 	return false
 }
 
-type TableFile struct {
-	FileHash string
-	FileName sql.NullString
-	FileSize sql.NullInt64
-	FileAddr sql.NullString
-	FileCre  string
-}
-
 // 从MySQL获取文件元信息
-func GetFileMeta(filehash string) (*TableFile, error) {
+func GetFileDB(filehash string) (*TableFile, error) {
 	stmt, err := mydb.DBConn().Prepare(
 		"SELECT file_sha1, file_addr, file_name, file_size, created FROM fileserver_file WHERE file_sha1=? AND status=1",
 	)

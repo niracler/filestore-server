@@ -6,8 +6,17 @@ import (
 	"fmt"
 )
 
+type TableUser struct {
+	Uid        sql.NullInt64
+	Username   sql.NullString
+	Email      sql.NullString
+	Phone      sql.NullString
+	SignUpAt   string
+	LastAction string
+}
+
 // 通过用户名以及密码完成user表的注册操作
-func UserSignup(username string, password string) bool {
+func CreateUserDB(username string, password string) bool {
 	stmt, err := mydb.DBConn().Prepare(
 		"INSERT IGNORE INTO fileserver_user(`user_name`, `user_pwd`) VALUES (?, ?)",
 	)
@@ -34,41 +43,33 @@ func UserSignup(username string, password string) bool {
 }
 
 // 判断密码是否正确
-func UserSignin(username string, encpwd string) bool {
+func IsValidUserDB(username string, encpwd string) (int64, bool) {
 	stmt, err := mydb.DBConn().Prepare(
-		"SELECT user_pwd FROM fileserver_user WHERE user_name=?",
+		"SELECT uid, user_pwd FROM fileserver_user WHERE user_name=?",
 	)
 	if err != nil {
 		fmt.Println("Failed to insert, err:" + err.Error())
-		return false
+		return 0, false
 	}
 	defer stmt.Close()
 
 	var encpwddb string
-	err = stmt.QueryRow(username).Scan(&encpwddb)
+	var uid int64
+	err = stmt.QueryRow(username).Scan(&uid, &encpwddb)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			fmt.Println("Zero rows found")
 		} else {
 			fmt.Println("Failed to select, err : " + err.Error())
 		}
-		return false
+		return 0, false
 	}
 
 	if encpwddb == encpwd {
-		return true
+		return uid, true
 	} else {
-		return false
+		return 0, false
 	}
-}
-
-type TableUser struct {
-	Uid        sql.NullInt64
-	Username   sql.NullString
-	Email      sql.NullString
-	Phone      sql.NullString
-	SignUpAt   string
-	LastAction string
 }
 
 // 获取用户信息

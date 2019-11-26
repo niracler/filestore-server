@@ -57,7 +57,7 @@ func uploadHandler(w http.ResponseWriter, r *http.Request) {
 
 	newFile.Seek(0, 0)
 	fileMeta.FileSha1 = util.FileSha1(newFile)
-	meta.CreateFileMetaDB(fileMeta) // 将上传的文件的元信息更新到数据库
+	meta.CreateFileMeta(fileMeta) // 将上传的文件的元信息更新到数据库
 
 	w.WriteHeader(http.StatusCreated)
 	io.WriteString(w, "Upload success, "+fileMeta.FileName+"\nsha1:"+fileMeta.FileSha1)
@@ -71,7 +71,7 @@ func getMetaHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	filehash := r.Form["filehash"][0]
-	fMate, err := meta.GetFileMetaDB(filehash)
+	fMate, err := meta.GetFileMeta(filehash)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		fmt.Println("Failed get file meta , err : " + err.Error())
@@ -98,7 +98,7 @@ func deleteHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	fileSha1 := r.Form.Get("filehash")
 
-	fMeta, err := meta.GetFileMetaDB(fileSha1)
+	fMeta, err := meta.GetFileMeta(fileSha1)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
@@ -130,13 +130,13 @@ func updateMetaHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	curFileMeta, err := meta.GetFileMetaDB(fileSha1)
+	curFileMeta, err := meta.GetFileMeta(fileSha1)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 	curFileMeta.FileName = newFileName
-	meta.UpdateFileMetaDB(curFileMeta)
+	meta.UpdateFileMeta(curFileMeta)
 
 	resp := util.RespMsg{
 		Msg:  "通过sha1获取文件元信息",

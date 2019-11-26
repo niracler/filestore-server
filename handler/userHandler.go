@@ -15,8 +15,9 @@ const (
 
 // 对用户的操作
 func UserHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
 	if r.Method == http.MethodGet {
-		getUserInfoHandler(w, r) //查询用户信息
+		getInfoHandler(w, r) //查询用户信息
 	} else if r.Method == http.MethodPost {
 		registerHandler(w, r) // 用户注册
 	} else {
@@ -26,6 +27,7 @@ func UserHandler(w http.ResponseWriter, r *http.Request) {
 
 // 用户登录接口
 func GetTokenHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
 	if r.Method == http.MethodPost {
 		if err := r.ParseForm(); err != nil {
 			fmt.Println(w, "ParseForm() err: "+err.Error())
@@ -36,15 +38,15 @@ func GetTokenHandler(w http.ResponseWriter, r *http.Request) {
 		password := r.FormValue("password")
 		encPassword := util.Sha1([]byte(password + pwdSalt))
 
-		pwdChecked := db.UserSignin(username, encPassword)
+		uid, pwdChecked := db.IsValidUserDB(username, encPassword)
 		if !pwdChecked {
 			w.WriteHeader(http.StatusBadRequest)
-			util.Logerr(w.Write([]byte("密码或用户名错误!!!")))
+			resp := util.RespMsg{Msg: "密码或用户名错误!!!"}
+			util.Logerr(w.Write(resp.JSONBytes()))
 		} else {
-			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusOK)
 
-			token, _ := util.CreateToken([]byte(pwdSalt), "YDQ", 2222, username)
+			token, _ := util.CreateToken([]byte(pwdSalt), "YDQ", uid, username)
 			fmt.Println(token)
 
 			resp := util.RespMsg{
@@ -82,23 +84,26 @@ func registerHandler(w http.ResponseWriter, r *http.Request) {
 
 	if len(username) < 3 || len(password) < 5 {
 		w.WriteHeader(http.StatusBadRequest)
-		util.Logerr(w.Write([]byte("Invalid parameter, too short!!!")))
+		resp := util.RespMsg{Msg: "Invalid parameter, too short!!!"}
+		util.Logerr(w.Write(resp.JSONBytes()))
 		return
 	}
 
 	encPassword := util.Sha1([]byte(password + pwdSalt))
-	suc := db.UserSignup(username, encPassword)
+	suc := db.CreateUserDB(username, encPassword)
 	if suc {
 		w.WriteHeader(http.StatusCreated)
-		util.Logerr(w.Write([]byte("成功注册")))
+		resp := util.RespMsg{Msg: "成功注册"}
+		util.Logerr(w.Write(resp.JSONBytes()))
 	} else {
 		w.WriteHeader(http.StatusBadRequest)
-		util.Logerr(w.Write([]byte("该用户可能已存在")))
+		resp := util.RespMsg{Msg: "该用户可能已存在"}
+		util.Logerr(w.Write(resp.JSONBytes()))
 	}
 }
 
 // 获取用户信息的接口
-func getUserInfoHandler(w http.ResponseWriter, r *http.Request) {
+func getInfoHandler(w http.ResponseWriter, r *http.Request) {
 	// 1. 解析请求参数
 	if err := r.ParseForm(); err != nil {
 		fmt.Println(w, "ParseForm() err: "+err.Error())
@@ -124,8 +129,16 @@ func getUserInfoHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	//// 验证uid
+	uid := claims.(jwt.MapClaims)["uid"]
+	if uid != umeta.Uid {
+		w.WriteHeader(http.StatusBadRequest)
+		resp := util.RespMsg{Msg: "Token 错误!!!"}
+		util.Logerr(w.Write(resp.JSONBytes()))
+		return
+	}
+
 	// 4. 组装并响应用户数据
-	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 
 	resp := util.RespMsg{

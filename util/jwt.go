@@ -9,7 +9,7 @@ type jwtCustomClaims struct {
 	jwt.StandardClaims
 
 	// 追加自己需要的信息
-	Uid      uint   `json:"uid"`
+	Uid      int64  `json:"uid"`
 	Username string `json:"username"`
 }
 
@@ -17,7 +17,7 @@ type jwtCustomClaims struct {
  * 生成 token
  * SecretKey 是一个 const 常量
  */
-func CreateToken(SecretKey []byte, issuer string, uid uint, username string) (tokenString string, err error) {
+func CreateToken(SecretKey []byte, issuer string, uid int64, username string) (tokenString string, err error) {
 	claims := &jwtCustomClaims{
 		jwt.StandardClaims{
 			ExpiresAt: int64(time.Now().Add(time.Hour * 72).Unix()),

@@ -16,7 +16,7 @@ func DownloadHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	fsha1 := r.Form.Get("filehash")
-	fm, err := meta.GetFileMetaDB(fsha1)
+	fm, err := meta.GetFileMeta(fsha1)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
