@@ -1,6 +1,7 @@
 package db
 
 import (
+	"database/sql"
 	"filestore-server/db/mydb"
 	"fmt"
 )
@@ -30,4 +31,33 @@ func UserSignup(username string, password string) bool {
 		return true
 	}
 	return false
+}
+
+// 判断密码是否正确
+func UserSignin(username string, encpwd string) bool {
+	stmt, err := mydb.DBConn().Prepare(
+		"SELECT user_pwd FROM fileserver_user WHERE user_name=?",
+	)
+	if err != nil {
+		fmt.Println("Failed to insert, err:" + err.Error())
+		return false
+	}
+	defer stmt.Close()
+
+	var encpwddb string
+	err = stmt.QueryRow(username).Scan(&encpwddb)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			fmt.Println("Zero rows found")
+		} else {
+			fmt.Println("Failed to select, err : " + err.Error())
+		}
+		return false
+	}
+
+	if encpwddb == encpwd {
+		return true
+	} else {
+		return false
+	}
 }

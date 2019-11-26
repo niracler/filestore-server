@@ -34,5 +34,6 @@ CREATE TABLE `fileserver_user`
   AUTO_INCREMENT = 5
   DEFAULT CHARSET = utf8mb4;
 
-INSERT INTO fileserver_user (`user_name`, `user_pwd`)
-VALUES ('nieacler13', '159258');
+INSERT INTO fileserver_user (`user_name`, `user_pwd`) VALUES ('nieacler13', '159258');
+
+SELECT user_pwd FROM fileserver_user WHERE user_name='niracler';
