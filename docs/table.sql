@@ -28,8 +28,11 @@ CREATE TABLE `fileserver_user`
     `profile`         TEXT COMMENT '用户属性',
     `status`          INT(11)      NOT NULL DEFAULT '0' COMMENT '账户状态(启用/禁用/锁定/标记删除等)',
     PRIMARY KEY (`uid`),
-    UNIQUE KEY `idx_status` (`status`)
+    UNIQUE KEY `idx_user_name` (`user_name`),
+    KEY `idx_status` (`status`)
 ) ENGINE = InnoDB
   AUTO_INCREMENT = 5
   DEFAULT CHARSET = utf8mb4;
 
+INSERT INTO fileserver_user (`user_name`, `user_pwd`)
+VALUES ('nieacler13', '159258');
