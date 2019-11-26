@@ -1,7 +1,6 @@
 package handler
 
 import (
-	"encoding/json"
 	"filestore-server/meta"
 	"filestore-server/util"
 	"fmt"
@@ -72,7 +71,6 @@ func getMetaHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	filehash := r.Form["filehash"][0]
-	//fMate := meta.GetFileMeta(filehash)
 	fMate, err := meta.GetFileMetaDB(filehash)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
@@ -80,12 +78,15 @@ func getMetaHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	data, err := json.Marshal(fMate)
-	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		return
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+
+	resp := util.RespMsg{
+		Msg:  "通过sha1获取文件元信息",
+		Data: fMate,
 	}
-	util.Logerr(w.Write(data))
+
+	util.Logerr(w.Write(resp.JSONBytes()))
 }
 
 // 文件删除的接口
@@ -137,12 +138,13 @@ func updateMetaHandler(w http.ResponseWriter, r *http.Request) {
 	curFileMeta.FileName = newFileName
 	meta.UpdateFileMetaDB(curFileMeta)
 
-	data, err := json.Marshal(curFileMeta)
-	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		return
+	resp := util.RespMsg{
+		Msg:  "通过sha1获取文件元信息",
+		Data: curFileMeta,
 	}
 
+	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	util.Logerr(w.Write(data))
+
+	util.Logerr(w.Write(resp.JSONBytes()))
 }

@@ -128,8 +128,6 @@ func getUserInfoHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 
-	fmt.Println(umeta)
-
 	resp := util.RespMsg{
 		Msg:  "这是搞什么事情啊???",
 		Data: umeta,
