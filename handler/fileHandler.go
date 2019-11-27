@@ -12,6 +12,7 @@ import (
 
 // 对文件操作的接口
 func FileHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
 	if r.Method == http.MethodPost {
 		uploadHandler(w, r) // 文件上传
 	} else if r.Method == http.MethodGet {
@@ -60,7 +61,12 @@ func uploadHandler(w http.ResponseWriter, r *http.Request) {
 	meta.CreateFileMeta(fileMeta) // 将上传的文件的元信息更新到数据库
 
 	w.WriteHeader(http.StatusCreated)
-	io.WriteString(w, "Upload success, "+fileMeta.FileName+"\nsha1:"+fileMeta.FileSha1)
+	resp := util.RespMsg{
+		Msg:  "通过sha1获取文件元信息",
+		Data: fileMeta,
+	}
+
+	util.Logerr(w.Write(resp.JSONBytes()))
 }
 
 // 通过sha1获取文件元信息
@@ -78,7 +84,6 @@ func getMetaHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 
 	resp := util.RespMsg{
