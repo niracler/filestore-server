@@ -117,7 +117,6 @@ func getInfoHandler(w http.ResponseWriter, r *http.Request) {
 		fmt.Println(" err :", err)
 		return
 	}
-	fmt.Println("claims:", claims)
 	username := claims.(jwt.MapClaims)["username"].(string)
 
 	// 3. 查询用户信息

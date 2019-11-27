@@ -5,6 +5,7 @@ import (
 	"filestore-server/meta"
 	"filestore-server/util"
 	"fmt"
+	"github.com/dgrijalva/jwt-go"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -16,7 +17,7 @@ import (
 func FileHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	if r.Method == http.MethodPost {
-		uploadHandler(w, r) // 文件上传
+		HTTPInterception(uploadHandler)(w, r) // 文件上传
 	} else if r.Method == http.MethodGet {
 		getMetaHandler(w, r) // 获取文件元信息
 	} else if r.Method == http.MethodDelete {
@@ -61,9 +62,29 @@ func uploadHandler(w http.ResponseWriter, r *http.Request) {
 	newFile.Seek(0, 0)
 	fileMeta.FileSha1 = util.FileSha1(newFile)
 
+	// 1. 解析请求参数
+	if err := r.ParseForm(); err != nil {
+		fmt.Println(w, "ParseForm() err: "+err.Error())
+		return
+	}
+
+	token := r.Header.Get("Authorization")
+
+	// 2. 验证token是否有效
+	claims, err := util.ParseToken(token, []byte(pwdSalt))
+	if nil != err {
+		fmt.Println(" err :", err)
+		return
+	}
+	username := claims.(jwt.MapClaims)["username"].(string)
+
+	//更新用户文件表
+	ok1 := db.CreateUserFileDB(username, fileMeta.FileSha1, fileMeta.FileName, fileMeta.FileSize)
+	ok2 := db.CreateFileDB(fileMeta.FileSha1, fileMeta.FileName, fileMeta.FileSize, fileMeta.Location)
+
 	// 将上传的文件的元信息更新到数据库
 	var resp util.RespMsg
-	if db.CreateFileDB(fileMeta.FileSha1, fileMeta.FileName, fileMeta.FileSize, fileMeta.Location) {
+	if ok1 && ok2 {
 		w.WriteHeader(http.StatusCreated)
 		resp = util.RespMsg{
 			Msg:  "上传文件成功",
@@ -71,7 +92,7 @@ func uploadHandler(w http.ResponseWriter, r *http.Request) {
 		}
 	} else {
 		w.WriteHeader(http.StatusBadRequest)
-		resp = util.RespMsg{Msg: "该文件已经存在"}
+		resp = util.RespMsg{Msg: "该文件已经存在, 或者出现了什么问题"}
 	}
 
 	util.Logerr(w.Write(resp.JSONBytes()))

@@ -24,7 +24,7 @@ func HTTPInterception(handlerFunc http.HandlerFunc) http.HandlerFunc {
 				return
 			}
 
-			fmt.Println(token + "我在这里动了一下!!!")
+			fmt.Println("Token 验证中 ......")
 
 			handlerFunc(w, r)
 		},
