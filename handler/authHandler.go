@@ -19,12 +19,10 @@ func HTTPInterception(handlerFunc http.HandlerFunc) http.HandlerFunc {
 
 			token := r.Header.Get("Authorization")
 			if token == "" {
-				resp := util.RespMsg{Msg: "Token 错误!!!"}
+				resp := util.RespMsg{Msg: "这种行为需要登录才能使用，你的 Token 有问题!!!"}
 				util.Logerr(w.Write(resp.JSONBytes()))
 				return
 			}
-
-			fmt.Println("Token 验证中 ......")
 
 			handlerFunc(w, r)
 		},

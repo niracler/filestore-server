@@ -19,7 +19,7 @@ func FileHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method == http.MethodPost {
 		HTTPInterception(uploadHandler)(w, r) // 文件上传
 	} else if r.Method == http.MethodGet {
-		getMetaHandler(w, r) // 获取文件元信息
+		HTTPInterception(QueryFileHandler)(w, r) // 获取文件元信息
 	} else if r.Method == http.MethodDelete {
 		deleteHandler(w, r) // 删除文件
 	} else if r.Method == http.MethodPut {
@@ -32,7 +32,7 @@ func FileHandler(w http.ResponseWriter, r *http.Request) {
 // 文件上传的操作
 func uploadHandler(w http.ResponseWriter, r *http.Request) {
 
-	//接收文件流以及存储到本地目录
+	// 接收文件流
 	file, head, err := r.FormFile("file")
 	if err != nil {
 		fmt.Printf("Failed to get data , err: %s\n", err.Error())
@@ -40,12 +40,14 @@ func uploadHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	defer file.Close()
 
+	// 保存文件信息
 	fileMeta := meta.FileMeta{
 		FileName: head.Filename,
 		Location: "/tmp/" + head.Filename,
 		UploadAt: time.Now().Format("2006-01-02 15:04:05"),
 	}
 
+	// 存储到文件目录
 	newFile, err := os.Create(fileMeta.Location)
 	if err != nil {
 		fmt.Printf("Failed to create file, err : %s\n", err.Error())
@@ -62,15 +64,8 @@ func uploadHandler(w http.ResponseWriter, r *http.Request) {
 	newFile.Seek(0, 0)
 	fileMeta.FileSha1 = util.FileSha1(newFile)
 
-	// 1. 解析请求参数
-	if err := r.ParseForm(); err != nil {
-		fmt.Println(w, "ParseForm() err: "+err.Error())
-		return
-	}
-
+	// 提取token中的用户名
 	token := r.Header.Get("Authorization")
-
-	// 2. 验证token是否有效
 	claims, err := util.ParseToken(token, []byte(pwdSalt))
 	if nil != err {
 		fmt.Println(" err :", err)
@@ -99,15 +94,23 @@ func uploadHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 // 通过sha1获取文件元信息
-func getMetaHandler(w http.ResponseWriter, r *http.Request) {
+func QueryFileHandler(w http.ResponseWriter, r *http.Request) {
 	if err := r.ParseForm(); err != nil {
 		fmt.Println(w, "ParseForm() err: "+err.Error())
 		return
 	}
 
+	// 提取token中的用户名
+	token := r.Header.Get("Authorization")
+	claims, err := util.ParseToken(token, []byte(pwdSalt))
+	if nil != err {
+		fmt.Println(" err :", err)
+		return
+	}
+	username := claims.(jwt.MapClaims)["username"].(string)
+	userFiles, err := db.QueryUserFileDB(username, 10)
+
 	var resp util.RespMsg
-	filehash := r.Form["filehash"][0]
-	fMate, err := db.GetFileDB(filehash)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		resp = util.RespMsg{
@@ -117,7 +120,7 @@ func getMetaHandler(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 		resp = util.RespMsg{
 			Msg:  "通过sha1获取文件元信息",
-			Data: fMate,
+			Data: userFiles,
 		}
 	}
 
