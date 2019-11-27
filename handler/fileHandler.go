@@ -1,10 +1,12 @@
 package handler
 
 import (
+	"filestore-server/db"
 	"filestore-server/meta"
 	"filestore-server/util"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"net/http"
 	"os"
 	"time"
@@ -58,12 +60,18 @@ func uploadHandler(w http.ResponseWriter, r *http.Request) {
 
 	newFile.Seek(0, 0)
 	fileMeta.FileSha1 = util.FileSha1(newFile)
-	meta.CreateFileMeta(fileMeta) // 将上传的文件的元信息更新到数据库
 
-	w.WriteHeader(http.StatusCreated)
-	resp := util.RespMsg{
-		Msg:  "通过sha1获取文件元信息",
-		Data: fileMeta,
+	// 将上传的文件的元信息更新到数据库
+	var resp util.RespMsg
+	if db.CreateFileDB(fileMeta.FileSha1, fileMeta.FileName, fileMeta.FileSize, fileMeta.Location) {
+		w.WriteHeader(http.StatusCreated)
+		resp = util.RespMsg{
+			Msg:  "上传文件成功",
+			Data: fileMeta,
+		}
+	} else {
+		w.WriteHeader(http.StatusBadRequest)
+		resp = util.RespMsg{Msg: "该文件已经存在"}
 	}
 
 	util.Logerr(w.Write(resp.JSONBytes()))
@@ -76,19 +84,20 @@ func getMetaHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	var resp util.RespMsg
 	filehash := r.Form["filehash"][0]
-	fMate, err := meta.GetFileMeta(filehash)
+	fMate, err := db.GetFileDB(filehash)
 	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		fmt.Println("Failed get file meta , err : " + err.Error())
-		return
-	}
-
-	w.WriteHeader(http.StatusOK)
-
-	resp := util.RespMsg{
-		Msg:  "通过sha1获取文件元信息",
-		Data: fMate,
+		w.WriteHeader(http.StatusBadRequest)
+		resp = util.RespMsg{
+			Msg: "Failed get file meta , err : " + err.Error(),
+		}
+	} else {
+		w.WriteHeader(http.StatusOK)
+		resp = util.RespMsg{
+			Msg:  "通过sha1获取文件元信息",
+			Data: fMate,
+		}
 	}
 
 	util.Logerr(w.Write(resp.JSONBytes()))
@@ -103,13 +112,13 @@ func deleteHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	fileSha1 := r.Form.Get("filehash")
 
-	fMeta, err := meta.GetFileMeta(fileSha1)
+	fMeta, err := db.GetFileDB(fileSha1)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 	os.Remove(fMeta.Location)
-	meta.RemoveFileMeta(fileSha1)
+	//meta.RemoveFileMeta(fileSha1)
 
 	w.WriteHeader(http.StatusNoContent)
 	io.WriteString(w, "Delete success, hahaha")
@@ -135,13 +144,13 @@ func updateMetaHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	curFileMeta, err := meta.GetFileMeta(fileSha1)
+	curFileMeta, err := db.GetFileDB(fileSha1)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 	curFileMeta.FileName = newFileName
-	meta.UpdateFileMeta(curFileMeta)
+	db.UpdateFileDB(curFileMeta.FileName, curFileMeta.FileSha1)
 
 	resp := util.RespMsg{
 		Msg:  "通过sha1获取文件元信息",
@@ -152,4 +161,36 @@ func updateMetaHandler(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 
 	util.Logerr(w.Write(resp.JSONBytes()))
+}
+
+// 下载文件的接口
+func DownloadHandler(w http.ResponseWriter, r *http.Request) {
+	if err := r.ParseForm(); err != nil {
+		fmt.Println(w, "ParseForm() err: "+err.Error())
+		return
+	}
+
+	fsha1 := r.Form.Get("filehash")
+	fm, err := db.GetFileDB(fsha1)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	f, err := os.Open(fm.Location)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	defer f.Close()
+
+	data, err := ioutil.ReadAll(f)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/octect-stream")
+	w.Header().Set("Content-Description", "attachment;filename=\""+fm.FileSha1+"\"")
+	w.Write(data)
 }

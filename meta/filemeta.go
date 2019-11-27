@@ -1,7 +1,5 @@
 package meta
 
-import "filestore-server/db"
-
 // 文件元信息结构
 type FileMeta struct {
 	FileSha1 string `json:"fileSha1"`
@@ -9,37 +7,4 @@ type FileMeta struct {
 	FileSize int64  `json:"fileSize"`
 	Location string `json:"location"`
 	UploadAt string `json:"uploadAt"`
-}
-
-// 新增文件元信息到 mysql 中
-func CreateFileMeta(fmeta FileMeta) bool {
-	return db.CreateFileDB(fmeta.FileSha1, fmeta.FileName, fmeta.FileSize, fmeta.Location)
-}
-
-// 更新文件元信息到 mysql 中
-func UpdateFileMeta(fmeta FileMeta) bool {
-	return db.UpdateFileDB(fmeta.FileSha1, fmeta.FileName)
-}
-
-// 通过sha1从数据库获取文件元信息
-func GetFileMeta(fileSha1 string) (FileMeta, error) {
-	tfile, err := db.GetFileDB(fileSha1)
-	if err != nil {
-		return FileMeta{}, err
-	}
-
-	fmeta := FileMeta{
-		FileSha1: tfile.FileHash,
-		FileName: tfile.FileName.String,
-		FileSize: tfile.FileSize.Int64,
-		Location: tfile.FileAddr.String,
-		UploadAt: tfile.FileCre,
-	}
-
-	return fmeta, nil
-}
-
-// 通过sha1删除文件
-func RemoveFileMeta(fileSha1 string) {
-
 }

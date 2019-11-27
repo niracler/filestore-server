@@ -3,17 +3,9 @@ package db
 import (
 	"database/sql"
 	"filestore-server/db/mydb"
+	"filestore-server/meta"
 	"fmt"
 )
-
-type TableUser struct {
-	Uid        sql.NullInt64
-	Username   sql.NullString
-	Email      sql.NullString
-	Phone      sql.NullString
-	SignUpAt   string
-	LastAction string
-}
 
 // 通过用户名以及密码完成user表的注册操作
 func CreateUserDB(username string, password string) bool {
@@ -73,7 +65,7 @@ func IsValidUserDB(username string, encpwd string) (int64, bool) {
 }
 
 // 获取用户信息
-func GetUserInfo(username string) (*TableUser, error) {
+func GetUserInfoDB(username string) (*meta.UserMeta, error) {
 	stmt, err := mydb.DBConn().Prepare(
 		"SELECT uid, user_name , email, phone, signup_at, last_active FROM fileserver_user WHERE user_name=?",
 	)
@@ -83,7 +75,7 @@ func GetUserInfo(username string) (*TableUser, error) {
 	}
 	defer stmt.Close()
 
-	var tuser TableUser
+	var tuser meta.UserMeta
 	err = stmt.QueryRow(username).Scan(&tuser.Uid, &tuser.Username, &tuser.Email, &tuser.Phone, &tuser.SignUpAt, &tuser.LastAction)
 	if err != nil {
 		if err == sql.ErrNoRows {

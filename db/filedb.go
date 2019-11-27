@@ -1,18 +1,10 @@
 package db
 
 import (
-	"database/sql"
 	"filestore-server/db/mydb"
+	"filestore-server/meta"
 	"fmt"
 )
-
-type TableFile struct {
-	FileHash string
-	FileName sql.NullString
-	FileSize sql.NullInt64
-	FileAddr sql.NullString
-	FileCre  string
-}
 
 // 用于更新文件元信息的数据库操作封装类
 func CreateFileDB(filehash string, filename string, filesize int64, fileaddr string) bool {
@@ -35,8 +27,8 @@ func CreateFileDB(filehash string, filename string, filesize int64, fileaddr str
 	if rf, err := ret.RowsAffected(); nil == err {
 		if rf <= 0 {
 			fmt.Printf("File with hash:%s has been uploaded before\n", filehash)
+			return false
 		}
-
 		return true
 	}
 	return false
@@ -70,7 +62,7 @@ func UpdateFileDB(filehash string, filename string) bool {
 }
 
 // 从MySQL获取文件元信息
-func GetFileDB(filehash string) (*TableFile, error) {
+func GetFileDB(filehash string) (*meta.FileMeta, error) {
 	stmt, err := mydb.DBConn().Prepare(
 		"SELECT file_sha1, file_addr, file_name, file_size, created FROM fileserver_file WHERE file_sha1=? AND status=1",
 	)
@@ -81,8 +73,8 @@ func GetFileDB(filehash string) (*TableFile, error) {
 	}
 	defer stmt.Close()
 
-	tfile := TableFile{}
-	err = stmt.QueryRow(filehash).Scan(&tfile.FileHash, &tfile.FileAddr, &tfile.FileName, &tfile.FileSize, &tfile.FileCre)
+	var tfile meta.FileMeta
+	err = stmt.QueryRow(filehash).Scan(&tfile.FileSha1, &tfile.Location, &tfile.FileName, &tfile.FileSize, &tfile.UploadAt)
 
 	if err != nil {
 		fmt.Println(err.Error())

@@ -2,7 +2,6 @@ package handler
 
 import (
 	"filestore-server/db"
-	"filestore-server/meta"
 	"filestore-server/util"
 	"fmt"
 	"github.com/dgrijalva/jwt-go"
@@ -122,7 +121,7 @@ func getInfoHandler(w http.ResponseWriter, r *http.Request) {
 	username := claims.(jwt.MapClaims)["username"].(string)
 
 	// 3. 查询用户信息
-	umeta, err := meta.GetUserMetaDB(username)
+	umeta, err := db.GetUserInfoDB(username)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		fmt.Println("Failed get user meta , err : " + err.Error())
