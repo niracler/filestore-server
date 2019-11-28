@@ -5,7 +5,6 @@ import (
 	"filestore-server/meta"
 	"filestore-server/util"
 	"fmt"
-	"github.com/dgrijalva/jwt-go"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -64,14 +63,8 @@ func uploadHandler(w http.ResponseWriter, r *http.Request) {
 	newFile.Seek(0, 0)
 	fileMeta.FileSha1 = util.FileSha1(newFile)
 
-	// 提取token中的用户名
-	token := r.Header.Get("Authorization")
-	claims, err := util.ParseToken(token, []byte(pwdSalt))
-	if nil != err {
-		fmt.Println(" err :", err)
-		return
-	}
-	username := claims.(jwt.MapClaims)["username"].(string)
+	// 获取用户名
+	username := r.Form.Get("username")
 
 	//更新文件表
 	msg := ""
@@ -102,31 +95,18 @@ func uploadHandler(w http.ResponseWriter, r *http.Request) {
 
 // 通过token获取用户文件列表
 func QueryFileHandler(w http.ResponseWriter, r *http.Request) {
-	if err := r.ParseForm(); err != nil {
-		fmt.Println(w, "ParseForm() err: "+err.Error())
-		return
-	}
-
-	// 提取token中的用户名
-	token := r.Header.Get("Authorization")
-	claims, err := util.ParseToken(token, []byte(pwdSalt))
-	if nil != err {
-		fmt.Println(" err :", err)
-		return
-	}
-	username := claims.(jwt.MapClaims)["username"].(string)
+	// 获取用户名
+	username := r.Form.Get("username")
 	userFiles, err := db.QueryUserFileDB(username, 10)
 
 	var resp util.RespMsg
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
-		resp = util.RespMsg{
-			Msg: "Failed get file meta , err : " + err.Error(),
-		}
+		resp = util.RespMsg{Msg: "Failed get file meta , err : " + err.Error()}
 	} else {
 		w.WriteHeader(http.StatusOK)
 		resp = util.RespMsg{
-			Msg:  "通过sha1获取文件元信息",
+			Msg:  "通过token获取文件元信息",
 			Data: userFiles,
 		}
 	}
@@ -184,11 +164,10 @@ func updateMetaHandler(w http.ResponseWriter, r *http.Request) {
 	db.UpdateFileDB(curFileMeta.FileName, curFileMeta.FileSha1)
 
 	resp := util.RespMsg{
-		Msg:  "通过sha1获取文件元信息",
+		Msg:  "通过sha1更新文件元信息",
 		Data: curFileMeta,
 	}
 
-	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 
 	util.Logerr(w.Write(resp.JSONBytes()))

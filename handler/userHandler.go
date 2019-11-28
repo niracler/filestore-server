@@ -4,8 +4,8 @@ import (
 	"filestore-server/db"
 	"filestore-server/util"
 	"fmt"
-	"github.com/dgrijalva/jwt-go"
 	"net/http"
+	"strconv"
 )
 
 const (
@@ -104,44 +104,32 @@ func registerHandler(w http.ResponseWriter, r *http.Request) {
 // 获取用户信息的接口
 func getInfoHandler(w http.ResponseWriter, r *http.Request) {
 	// 1. 解析请求参数
-	if err := r.ParseForm(); err != nil {
-		fmt.Println(w, "ParseForm() err: "+err.Error())
-		return
-	}
+	username := r.Form.Get("username")
+	uid, err := strconv.ParseInt(r.Form.Get("uid"), 10, 64)
 
-	token := r.Header.Get("Authorization")
-
-	// 2. 验证token是否有效
-	claims, err := util.ParseToken(token, []byte(pwdSalt))
-	if nil != err {
-		fmt.Println(" err :", err)
-		return
-	}
-	username := claims.(jwt.MapClaims)["username"].(string)
-
-	// 3. 查询用户信息
-	umeta, err := db.GetUserInfoDB(username)
+	var resp util.RespMsg
+	// 各种错误的情况的响应
 	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		fmt.Println("Failed get user meta , err : " + err.Error())
-		return
-	}
-
-	//// 验证uid
-	uid := claims.(jwt.MapClaims)["uid"]
-	if uid != umeta.Uid {
 		w.WriteHeader(http.StatusBadRequest)
-		resp := util.RespMsg{Msg: "Token 错误!!!"}
-		util.Logerr(w.Write(resp.JSONBytes()))
-		return
-	}
+		resp = util.RespMsg{Msg: "uid 参数有问题" + err.Error()}
 
-	// 4. 组装并响应用户数据
-	w.WriteHeader(http.StatusOK)
+	} else if umeta, err := db.GetUserInfoDB(username); err != nil {
+		// 尝试从数据库中找出该用户
+		w.WriteHeader(http.StatusBadRequest)
+		resp = util.RespMsg{Msg: "找不到该用户!!!" + err.Error()}
 
-	resp := util.RespMsg{
-		Msg:  "这是搞什么事情啊???",
-		Data: umeta,
+	} else if uid != umeta.Uid {
+		// 验证uid
+		w.WriteHeader(http.StatusBadRequest)
+		resp = util.RespMsg{Msg: "Token 错误!!!"}
+
+	} else {
+		// 组装并响应用户数据
+		w.WriteHeader(http.StatusOK)
+		resp = util.RespMsg{
+			Msg:  "您好,这是您的用户数据!!",
+			Data: umeta,
+		}
 	}
 
 	util.Logerr(w.Write(resp.JSONBytes()))
