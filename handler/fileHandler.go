@@ -73,27 +73,34 @@ func uploadHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	username := claims.(jwt.MapClaims)["username"].(string)
 
-	//更新用户文件表
-	ok1 := db.CreateUserFileDB(username, fileMeta.FileSha1, fileMeta.FileName, fileMeta.FileSize)
-	ok2 := db.CreateFileDB(fileMeta.FileSha1, fileMeta.FileName, fileMeta.FileSize, fileMeta.Location)
+	//更新文件表
+	msg := ""
+	isExist, err1 := db.CreateFileDB(fileMeta.FileSha1, fileMeta.FileName, fileMeta.FileSize, fileMeta.Location)
+	if isExist {
+		msg = msg + "伪秒传,"
+	}
 
-	// 将上传的文件的元信息更新到数据库
+	//更新用户文件表
+	isExist, err2 := db.CreateUserFileDB(username, fileMeta.FileSha1, fileMeta.FileName, fileMeta.FileSize)
 	var resp util.RespMsg
-	if ok1 && ok2 {
+	if err1 == nil && err2 == nil && !isExist {
 		w.WriteHeader(http.StatusCreated)
 		resp = util.RespMsg{
-			Msg:  "上传文件成功",
+			Msg:  msg + "上传文件成功",
 			Data: fileMeta,
 		}
-	} else {
+	} else if isExist {
 		w.WriteHeader(http.StatusBadRequest)
-		resp = util.RespMsg{Msg: "该文件已经存在, 或者出现了什么问题"}
+		resp = util.RespMsg{Msg: "该文件已存在"}
+	} else {
+		w.WriteHeader(http.StatusInternalServerError)
+		resp = util.RespMsg{Msg: "出现了什么问题, 失败了"}
 	}
 
 	util.Logerr(w.Write(resp.JSONBytes()))
 }
 
-// 通过sha1获取文件元信息
+// 通过token获取用户文件列表
 func QueryFileHandler(w http.ResponseWriter, r *http.Request) {
 	if err := r.ParseForm(); err != nil {
 		fmt.Println(w, "ParseForm() err: "+err.Error())
