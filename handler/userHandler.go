@@ -1,8 +1,8 @@
 package handler
 
 import (
-	"filestore-server/db"
-	"filestore-server/util"
+	"filestore/db"
+	"filestore/util"
 	"fmt"
 	"net/http"
 	"strconv"

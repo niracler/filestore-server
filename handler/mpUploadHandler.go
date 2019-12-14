@@ -1,7 +1,7 @@
 package handler
 
 import (
-	"filestore-server/cache/myredis"
+	"filestore/cache/myredis"
 	"fmt"
 	"net/http"
 )

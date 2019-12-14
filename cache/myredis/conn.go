@@ -37,11 +37,10 @@ func newRedisPool() *redis.Pool {
 			_, err := c.Do("PING")
 			return err
 		},
-		MaxIdle:         50,
-		MaxActive:       30,
-		IdleTimeout:     300 * time.Second,
-		Wait:            false,
-		MaxConnLifetime: 0,
+		MaxIdle:     50,
+		MaxActive:   30,
+		IdleTimeout: 300 * time.Second,
+		Wait:        false,
 	}
 }
 

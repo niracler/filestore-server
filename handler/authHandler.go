@@ -1,7 +1,7 @@
 package handler
 
 import (
-	"filestore-server/util"
+	"filestore/util"
 	"fmt"
 	"github.com/dgrijalva/jwt-go"
 	"net/http"

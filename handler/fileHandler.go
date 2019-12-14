@@ -1,9 +1,9 @@
 package handler
 
 import (
-	"filestore-server/db"
-	"filestore-server/meta"
-	"filestore-server/util"
+	"filestore/db"
+	"filestore/meta"
+	"filestore/util"
 	"fmt"
 	"io"
 	"io/ioutil"

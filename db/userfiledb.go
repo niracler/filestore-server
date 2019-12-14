@@ -1,8 +1,8 @@
 package db
 
 import (
-	"filestore-server/db/mydb"
-	"filestore-server/meta"
+	"filestore/db/mydb"
+	"filestore/meta"
 	"fmt"
 )
 

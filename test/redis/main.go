@@ -1,7 +1,7 @@
 package main
 
 import (
-	"filestore-server/cache/myredis"
+	"filestore/cache/myredis"
 	"fmt"
 )
 
